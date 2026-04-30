@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <base href="/Quiet-Reader/">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="PCで書いた文章をスマホで静かに読み返す、個人用読書アプリ">
+
+  <!-- PWA / iOS -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Quiet Reader">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- テーマカラー（クリーム背景に合わせる） -->
+  <meta name="theme-color" content="#F5F0E8">
+
+  <!-- OGP（リンクプレビュー用） -->
+  <meta property="og:title" content="Quiet Reader">
+  <meta property="og:description" content="PCで書いた文章をスマホで静かに読み返す、個人用読書アプリ">
+  <meta property="og:type" content="website">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>Quiet Reader</title>
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    /* ローディング中の背景をアプリと同色にする（白チカ防止） */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #F5F0E8;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
