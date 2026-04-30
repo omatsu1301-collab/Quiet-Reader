@@ -309,8 +309,16 @@ class _DocOptionsSheet extends StatelessWidget {
             },
           ),
           ListTile(
+            leading: const Icon(Icons.drive_file_rename_outline, color: AppColors.textSecondary),
+            title: const Text('タイトルを変更'),
+            onTap: () {
+              Navigator.pop(context);
+              _showRenameDialog(context);
+            },
+          ),
+          ListTile(
             leading: const Icon(Icons.edit_outlined, color: AppColors.textSecondary),
-            title: const Text('編集'),
+            title: const Text('本文・種別を編集'),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -330,6 +338,51 @@ class _DocOptionsSheet extends StatelessWidget {
             },
           ),
           const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  void _showRenameDialog(BuildContext context) {
+    final controller = TextEditingController(text: doc.title);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.cardBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Text(
+          '文書タイトルを変更',
+          style: GoogleFonts.notoSerif(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: '文書タイトル',
+            hintText: '例：本文 2章改稿 / pt1 初稿',
+          ),
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) async {
+            final newTitle = controller.text.trim();
+            if (newTitle.isEmpty) return;
+            await ctx.read<AppProvider>().updateDocument(doc, title: newTitle);
+            if (ctx.mounted) Navigator.pop(ctx);
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('キャンセル'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final newTitle = controller.text.trim();
+              if (newTitle.isEmpty) return;
+              await ctx.read<AppProvider>().updateDocument(doc, title: newTitle);
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('保存'),
+          ),
         ],
       ),
     );
