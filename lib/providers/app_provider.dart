@@ -6,10 +6,15 @@ import '../models/bookmark.dart';
 import '../models/highlight.dart';
 import '../models/memo.dart';
 import '../models/reader_settings.dart';
-import '../services/storage_service.dart';
+import '../services/repository.dart';
 
+/// アプリ全体の状態管理
+///
+/// StorageService への直接依存をなくし、AppRepository インターフェース
+/// のみに依存する。将来 Firebase 等に切り替える場合は main.dart の
+/// DI 注入箇所だけを変更すればよい。
 class AppProvider extends ChangeNotifier {
-  final StorageService _storage;
+  final AppRepository _repo;
   final _uuid = const Uuid();
 
   List<Work> _works = [];
@@ -18,53 +23,49 @@ class AppProvider extends ChangeNotifier {
   List<Work> get works => _works;
   ReaderSettings get settings => _settings;
 
-  AppProvider(this._storage) {
-    _load();
+  /// DataTransferScreen から TransferService を生成するために公開
+  AppRepository get repo => _repo;
+
+  AppProvider(this._repo) {
+    _reload();
   }
 
-  void _load() {
-    _works = _storage.getAllWorks();
-    _settings = _storage.getSettings();
+  /// Repository からデータを再読み込みして UI を更新する
+  void _reload() {
+    _works    = _repo.getAllWorks();
+    _settings = _repo.getSettings();
     notifyListeners();
   }
 
-  // ---- Work ----
+  // ── Work ──
+
   Future<Work> createWork(String title) async {
-    final now = DateTime.now();
-    final work = Work(
-      id: _uuid.v4(),
-      title: title,
-      createdAt: now,
-      updatedAt: now,
-    );
-    await _storage.saveWork(work);
-    _works = _storage.getAllWorks();
-    notifyListeners();
+    final now  = DateTime.now();
+    final work = Work(id: _uuid.v4(), title: title, createdAt: now, updatedAt: now);
+    await _repo.saveWork(work);
+    _reload();
     return work;
   }
 
   Future<void> updateWork(Work work, String newTitle) async {
-    work.title = newTitle;
+    work.title     = newTitle;
     work.updatedAt = DateTime.now();
-    await _storage.saveWork(work);
-    _works = _storage.getAllWorks();
-    notifyListeners();
+    await _repo.saveWork(work);
+    _reload();
   }
 
   Future<void> deleteWork(String workId) async {
-    await _storage.deleteWork(workId);
-    _works = _storage.getAllWorks();
-    notifyListeners();
+    await _repo.deleteWork(workId);
+    _reload();
   }
 
-  // ---- Document ----
-  List<Document> getDocuments(String workId) {
-    return _storage.getDocumentsByWork(workId);
-  }
+  // ── Document ──
 
-  Document? getDocument(String documentId) {
-    return _storage.getDocument(documentId);
-  }
+  List<Document> getDocuments(String workId) =>
+      _repo.getDocumentsByWork(workId);
+
+  Document? getDocument(String documentId) =>
+      _repo.getDocument(documentId);
 
   Future<Document> createDocument({
     required String workId,
@@ -74,74 +75,63 @@ class AppProvider extends ChangeNotifier {
   }) async {
     final now = DateTime.now();
     final doc = Document(
-      id: _uuid.v4(),
-      workId: workId,
-      title: title,
-      type: type,
-      body: body,
-      createdAt: now,
-      updatedAt: now,
+      id: _uuid.v4(), workId: workId, title: title,
+      type: type, body: body, createdAt: now, updatedAt: now,
     );
-    await _storage.saveDocument(doc);
-    _works = _storage.getAllWorks();
-    notifyListeners();
+    await _repo.saveDocument(doc);
+    _reload();
     return doc;
   }
 
   Future<void> updateDocument(Document doc, {
-    String? title,
-    String? type,
-    String? body,
+    String? title, String? type, String? body,
   }) async {
     if (title != null) doc.title = title;
-    if (type != null) doc.type = type;
-    if (body != null) doc.body = body;
+    if (type  != null) doc.type  = type;
+    if (body  != null) doc.body  = body;
     doc.updatedAt = DateTime.now();
-    await _storage.saveDocument(doc);
-    _works = _storage.getAllWorks();
-    notifyListeners();
+    await _repo.saveDocument(doc);
+    _reload();
   }
 
   Future<void> deleteDocument(String documentId) async {
-    await _storage.deleteDocument(documentId);
+    await _repo.deleteDocument(documentId);
     notifyListeners();
   }
 
   Future<void> saveReadPosition(String documentId, double position) async {
-    final doc = _storage.getDocument(documentId);
+    final doc = _repo.getDocument(documentId);
     if (doc == null) return;
     doc.lastReadPosition = position;
-    doc.lastOpenedAt = DateTime.now();
-    await _storage.saveDocument(doc);
+    doc.lastOpenedAt     = DateTime.now();
+    await _repo.saveDocument(doc);
+    // 読書位置保存は高頻度のため notifyListeners は呼ばない
   }
 
-  // ---- Bookmark ----
-  List<Bookmark> getBookmarks(String documentId) {
-    return _storage.getBookmarksByDocument(documentId);
-  }
+  // ── Bookmark ──
+
+  List<Bookmark> getBookmarks(String documentId) =>
+      _repo.getBookmarksByDocument(documentId);
 
   Future<Bookmark> addBookmark(String documentId, double position, {String? label}) async {
-    final bookmark = Bookmark(
-      id: _uuid.v4(),
-      documentId: documentId,
-      position: position,
-      label: label,
-      createdAt: DateTime.now(),
+    final bm = Bookmark(
+      id: _uuid.v4(), documentId: documentId,
+      position: position, label: label, createdAt: DateTime.now(),
     );
-    await _storage.saveBookmark(bookmark);
+    await _repo.saveBookmark(bm);
     notifyListeners();
-    return bookmark;
+    return bm;
   }
 
   Future<void> deleteBookmark(String bookmarkId) async {
-    await _storage.deleteBookmark(bookmarkId);
+    await _repo.deleteBookmark(bookmarkId);
     notifyListeners();
   }
 
-  // ---- Highlight ----
-  List<Highlight> getHighlights(String documentId) {
-    return _storage.getHighlightsByDocument(documentId);
-  }
+  // ── Highlight ──
+
+  List<Highlight> getHighlights(String documentId) =>
+      _repo.getHighlightsByDocument(documentId);
 
   Future<Highlight> addHighlight({
     required String documentId,
@@ -151,90 +141,85 @@ class AppProvider extends ChangeNotifier {
     required String category,
   }) async {
     final now = DateTime.now();
-    final highlight = Highlight(
-      id: _uuid.v4(),
-      documentId: documentId,
-      startOffset: startOffset,
-      endOffset: endOffset,
-      text: text,
-      category: category,
-      createdAt: now,
-      updatedAt: now,
+    final h   = Highlight(
+      id: _uuid.v4(), documentId: documentId,
+      startOffset: startOffset, endOffset: endOffset,
+      text: text, category: category, createdAt: now, updatedAt: now,
     );
-    await _storage.saveHighlight(highlight);
+    await _repo.saveHighlight(h);
     notifyListeners();
-    return highlight;
+    return h;
   }
 
   Future<void> deleteHighlight(String highlightId) async {
-    await _storage.deleteHighlight(highlightId);
+    await _repo.deleteHighlight(highlightId);
     notifyListeners();
   }
 
-  // ---- Memo ----
-  Memo? getMemo(String highlightId) {
-    return _storage.getMemoByHighlight(highlightId);
-  }
+  // ── Memo ──
+
+  Memo? getMemo(String highlightId) => _repo.getMemoByHighlight(highlightId);
 
   Future<void> saveMemo(String highlightId, String content) async {
-    final existing = _storage.getMemoByHighlight(highlightId);
-    final now = DateTime.now();
+    final existing = _repo.getMemoByHighlight(highlightId);
+    final now      = DateTime.now();
     if (existing != null) {
-      existing.content = content;
+      existing.content   = content;
       existing.updatedAt = now;
-      await _storage.saveMemo(existing);
+      await _repo.saveMemo(existing);
     } else {
-      final memo = Memo(
-        id: _uuid.v4(),
-        highlightId: highlightId,
-        content: content,
-        createdAt: now,
-        updatedAt: now,
-      );
-      await _storage.saveMemo(memo);
+      await _repo.saveMemo(Memo(
+        id: _uuid.v4(), highlightId: highlightId,
+        content: content, createdAt: now, updatedAt: now,
+      ));
     }
     notifyListeners();
   }
 
-  // ---- Settings ----
+  // ── ReaderSettings ──
+
   Future<void> updateSettings(ReaderSettings newSettings) async {
     _settings = newSettings;
-    await _storage.saveSettings(newSettings);
+    await _repo.saveSettings(newSettings);
     notifyListeners();
   }
 
-  // ---- Export ----
+  // ── ハイライト/メモ テキスト書き出し（読書画面用）──
+
   String exportHighlightsAndMemos(String workId, String documentId) {
     final work = _works.firstWhere((w) => w.id == workId);
-    final doc = _storage.getDocument(documentId);
+    final doc  = _repo.getDocument(documentId);
     if (doc == null) return '';
 
-    final highlights = _storage.getHighlightsByDocument(documentId);
-    if (highlights.isEmpty) return '# ${work.title}\n## ${doc.title}\n\nメモはありません。';
-
-    final categoryLabel = {
-      'good': '良表現',
-      'fix': '違和感',
-      'check': '要確認',
-    };
-
-    final buffer = StringBuffer();
-    buffer.writeln('# ${work.title}');
-    buffer.writeln('## ${doc.title}');
-    buffer.writeln('### メモ一覧');
-    buffer.writeln();
-
-    for (final h in highlights) {
-      final memo = _storage.getMemoByHighlight(h.id);
-      final cat = categoryLabel[h.category] ?? h.category;
-      buffer.writeln('- 種別: $cat');
-      buffer.writeln('- ハイライト: 「${h.text}」');
-      if (memo != null && memo.content.isNotEmpty) {
-        buffer.writeln('- メモ: ${memo.content}');
-      }
-      buffer.writeln();
+    final highlights = _repo.getHighlightsByDocument(documentId);
+    if (highlights.isEmpty) {
+      return '# ${work.title}\n## ${doc.title}\n\nメモはありません。';
     }
 
-    return buffer.toString();
+    const labels = {'good': '良表現', 'fix': '違和感', 'check': '要確認'};
+    final buf = StringBuffer()
+      ..writeln('# ${work.title}')
+      ..writeln('## ${doc.title}')
+      ..writeln('### メモ一覧')
+      ..writeln();
+
+    for (final h in highlights) {
+      final memo = _repo.getMemoByHighlight(h.id);
+      buf
+        ..writeln('- 種別: ${labels[h.category] ?? h.category}')
+        ..writeln('- ハイライト: 「${h.text}」');
+      if (memo != null && memo.content.isNotEmpty) {
+        buf.writeln('- メモ: ${memo.content}');
+      }
+      buf.writeln();
+    }
+    return buf.toString();
+  }
+
+  // ── データ転送（JSON インポート完了後に呼ぶ）──
+
+  /// インポート後にアプリ全体の状態を再読み込みする
+  Future<void> reloadAfterImport() async {
+    _reload();
   }
 }

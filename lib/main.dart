@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'services/storage_service.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'models/work.dart';
+import 'models/document.dart';
+import 'models/bookmark.dart';
+import 'models/highlight.dart';
+import 'models/memo.dart';
+import 'models/reader_settings.dart';
+import 'services/hive_repository.dart';
 import 'providers/app_provider.dart';
 import 'screens/library_screen.dart';
 import 'theme/app_theme.dart';
@@ -17,13 +24,22 @@ void main() async {
     ),
   );
 
-  // Hive初期化
-  final storage = StorageService();
-  await StorageService.init();
+  // Hive 初期化
+  await Hive.initFlutter();
+  Hive.registerAdapter(WorkAdapter());
+  Hive.registerAdapter(DocumentAdapter());
+  Hive.registerAdapter(BookmarkAdapter());
+  Hive.registerAdapter(HighlightAdapter());
+  Hive.registerAdapter(MemoAdapter());
+  Hive.registerAdapter(ReaderSettingsAdapter());
+
+  // HiveRepository（AppRepository実装）を初期化してDI
+  await HiveRepository.init();
+  final repo = HiveRepository();
 
   runApp(
     ChangeNotifierProvider(
-      create: (_) => AppProvider(storage),
+      create: (_) => AppProvider(repo),
       child: const QuietReaderApp(),
     ),
   );

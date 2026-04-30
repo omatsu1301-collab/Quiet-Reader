@@ -5,6 +5,7 @@ import '../providers/app_provider.dart';
 import '../models/work.dart';
 import '../theme/app_theme.dart';
 import 'work_screen.dart';
+import 'data_transfer_screen.dart';
 
 class LibraryScreen extends StatelessWidget {
   const LibraryScreen({super.key});
@@ -24,6 +25,14 @@ class LibraryScreen extends StatelessWidget {
           ),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.swap_horiz_outlined, color: AppColors.textSecondary),
+            tooltip: 'データ転送',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const DataTransferScreen()),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 4),
             child: IconButton(
