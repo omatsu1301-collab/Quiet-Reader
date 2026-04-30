@@ -783,10 +783,11 @@ List<_Chapter> _detectChapters(String text) {
   int offset = 0;
 
   final patterns = [
-    RegExp(r'^#{1,3}\s+(.+)$'),                          // Markdown見出し
-    RegExp(r'^第[一二三四五六七八九十百\d]+[章話節部編]\s*(.*)$'),  // 第N章
-    RegExp(r'^[■◆●▶︎【].+'),                             // 記号付き見出し
-    RegExp(r'^\[.+\]$'),                                   // [タイトル]形式
+    RegExp(r'^#{1,3}\s+(.+)$'),                               // Markdown見出し
+    RegExp(r'^第[一二三四五六七八九十百\d]+[章話節部編]\s*(.*)$'),   // 第N章
+    RegExp(r'^(?:pt|PT|Pt|pT)\.?\s*\d+(?:\s+.+)?$'),        // pt1 / pt 1 / pt.1 / pt1 タイトル
+    RegExp(r'^[■◆●▶︎【].+'),                                  // 記号付き見出し
+    RegExp(r'^\[.+\]$'),                                      // [タイトル]形式
   ];
 
   for (final line in lines) {
@@ -879,7 +880,7 @@ class _ChaptersSheetState extends State<_ChaptersSheet> with SingleTickerProvide
               children: [
                 // 章一覧
                 widget.chapters.isEmpty
-                    ? _EmptyTab(message: '見出しが検出されませんでした\n（# 章タイトル や 第1章 などを使うと自動検出されます）')
+                    ? _EmptyTab(message: '見出しが検出されませんでした\n（# 章タイトル / 第1章 / pt1 などを使うと自動検出されます）')
                     : ListView.builder(
                         controller: ctrl,
                         itemCount: widget.chapters.length,
