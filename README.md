@@ -1,16 +1,32 @@
-# quiet_reader
+# Quiet Reader
 
-A new Flutter project.
+PCで書いた文章を、スマホで静かに読み返すための個人用読書アプリ。
 
-## Getting Started
+🌐 **公開URL**: https://omatsu1301-collab.github.io/Quiet-Reader/
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+## 特徴
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- 作品・文書の管理（コピペでインポート）
+- クリーム背景 × 明朝体の読書特化UI
+- しおり・章ジャンプ・ハイライト・メモ
+- 表示設定（フォント / 文字サイズ / 行間 / 余白 / 本文幅 / 背景濃淡）
+- 関連文書の下部シート参照
+- メモ一覧のテキスト書き出し（Claude等へ渡しやすい形式）
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 保存方式
+
+**現在: ブラウザのローカルストレージ（IndexedDB / Hive）**
+
+- データはブラウザ内にのみ保存されます
+- PCとスマホは別々のローカルストレージを持つため、**現時点では同期しません**
+- アプリコード（見た目・機能）はどの端末でも同一URLで動作します
+
+## 技術スタック
+
+- Flutter 3.35.4 (Web)
+- Hive（ローカルDB）
+- Provider（状態管理）
+- GitHub Actions（自動デプロイ）
+- GitHub Pages（ホスティング）
